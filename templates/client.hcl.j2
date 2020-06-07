@@ -62,3 +62,15 @@ client {
     }
     {% endif %}
 }
+
+{% if ( nomad_ca_file ) and ( nomad_client_cert_file ) and ( nomad_client_key_file ) -%}
+tls {
+    http = true
+    rpc = true
+    ca_file = "{{ nomad_ca_file }}"
+    cert_file = "{{ nomad_client_cert_file }}"
+    key_file = "{{ nomad_client_key_file }}"
+    verify_server_hostname = {{ nomad_verify_server_hostname | bool | lower }}
+    verify_https_client = {{ nomad_verify_https_client | bool | lower }}
+}
+{% endif %}

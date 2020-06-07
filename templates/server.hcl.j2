@@ -42,3 +42,16 @@ authoritative_region = "{{ nomad_authoritative_region }}"
 
     encrypt = "{{ nomad_encrypt }}"
 }
+
+{% if ( nomad_ca_file ) and ( nomad_server_cert_file ) and ( nomad_server_key_file ) -%}
+tls {
+    http = true
+    rpc = true
+    ca_file = "{{ nomad_ca_file }}"
+    cert_file = "{{ nomad_server_cert_file }}"
+    key_file = "{{ nomad_server_key_file }}"
+    verify_server_hostname = {{ nomad_verify_server_hostname | bool | lower }}
+    verify_https_client = {{ nomad_verify_https_client | bool | lower }}
+}
+{% endif %}
+

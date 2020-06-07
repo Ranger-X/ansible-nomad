@@ -55,6 +55,14 @@
     group: root
     mode: 0755
 
+- name: prepare TLS
+  include: tls.yml
+  when:
+    - _nomad_node_server | bool
+    - nomad_tls_generate | bool
+  notify:
+    - restart nomad
+
 - name: Base configuration
   template:
     src: base.hcl.j2

@@ -1,0 +1,82 @@
+---
+# File: tls.yml - TLS generation tasks for Nomad
+
+- name: Check CFSSL binary already exist
+  stat:
+    path: "{{ nomad_bin_dir }}/cfssl"
+  become: false
+  register: cfssl_bin
+
+- block:
+
+  - name: Download CFSSL {{ cfssl_version }} binaries
+    get_url:
+      url: "{{ cfssl_pkg_url }}/{{ item }}_linux-amd64"
+      dest: "{{ nomad_bin_dir }}/{{ item }}"
+      owner: "{{ nomad_user }}"
+      group: "{{ nomad_group }}"
+      mode: '0755'
+    with_items:
+      - 'cfssl'
+      - 'cfssljson'
+
+  when: nomad_tls_generate | bool and not cfssl_bin.stat.exists
+  tags: tls
+  become: false
+
+- block:
+    - name: Generate Nomad TLS CA
+      shell:
+        cmd: "cfssl print-defaults csr | cfssl gencert -initca - | cfssljson -bare {{ nomad_tls_ca_prefix }}"
+        chdir: "{{ nomad_config_dir }}/"
+        creates: "{{ nomad_config_dir }}/{{ nomad_tls_ca_prefix }}.pem"
+
+    - name: Copy cfssl.json
+      copy:
+        src: cfssl.json
+        dest: "{{ nomad_config_dir }}/cfssl.json.def"
+        owner: "{{ nomad_user }}"
+        group: "{{ nomad_group }}"
+        mode: '0644'
+
+    - name: Generate Nomad TLS for Server role
+      shell:
+        cmd: "echo '{}' | cfssl gencert -ca={{ nomad_tls_ca_prefix }}.pem -ca-key={{ nomad_tls_ca_prefix }}-key.pem -config=cfssl.json.def -hostname=\"server.{{ nomad_region }}.nomad,localhost,127.0.0.1,{{ nomad_advertise_address }}\" - | cfssljson -bare server"
+        chdir: "{{ nomad_config_dir }}/"
+        creates: "{{ nomad_config_dir }}/server.pem"
+      when: _nomad_node_server | bool
+
+    - name: Generate Nomad TLS for Client role
+      shell:
+        cmd: "echo '{}' | cfssl gencert -ca={{ nomad_tls_ca_prefix }}.pem -ca-key={{ nomad_tls_ca_prefix }}-key.pem -config=cfssl.json.def -hostname=\"client.{{ nomad_region }}.nomad,localhost,127.0.0.1,{{ nomad_advertise_address }}\" - | cfssljson -bare client"
+        chdir: "{{ nomad_config_dir }}/"
+        creates: "{{ nomad_config_dir }}/client.pem"
+      when: _nomad_node_client | bool
+
+    - name: Generate Nomad TLS for nomad-cli usage
+      shell:
+        cmd: "echo '{}' | cfssl gencert -ca={{ nomad_tls_ca_prefix }}.pem -ca-key={{ nomad_tls_ca_prefix }}-key.pem -profile=client - | cfssljson -bare cli"
+        chdir: "{{ nomad_config_dir }}/"
+        creates: "{{ nomad_config_dir }}/cli.pem"
+
+    - name: Redefine some TLS-related variables
+      set_fact:
+        nomad_ca_file: "{{ nomad_config_dir }}/{{ nomad_tls_ca_prefix }}.pem"
+        nomad_server_cert_file: "{{ nomad_config_dir }}/server.pem"
+        nomad_server_key_file: "{{ nomad_config_dir }}/server-key.pem"
+        nomad_client_cert_file: "{{ nomad_config_dir }}/client.pem"
+        nomad_client_key_file: "{{ nomad_config_dir }}/client-key.pem"
+        nomad_cli_cert_file: "{{ nomad_config_dir }}/cli.pem"
+        nomad_cli_key_file: "{{ nomad_config_dir }}/cli-key.pem"
+
+    - name: Generate BASH profile file with Nomad client settings
+      template:
+        src: nomad_client.sh.j2
+        dest: "/etc/profile.d/nomad_client.sh"
+        owner: root
+        group: root
+        mode: '0755'
+
+  when: nomad_tls_generate | bool
+  tags: tls
+  become: false
