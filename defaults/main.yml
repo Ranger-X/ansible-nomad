@@ -148,6 +148,22 @@ nomad_tls_ca_prefix: nomad-ca
 # Same CA file for all Nomad nodes
 nomad_ca_file: ""
 
+# CA certificate properties
+nomad_ca_cn: "example.net"
+nomad_ca_hosts:
+  - "example.net"
+  - "www.example.net"
+
+nomad_ca_key_algo: ecdsa
+nomad_ca_key_size: 256
+nomad_ca_names:
+  - {
+        "C": "US",
+        "L": "CA",
+        "ST": "San Francisco"
+    }
+nomad_ca_signing_default_expiry: "876000h"
+
 # TLS certificate for server role
 # Only need to define if you want HTTPS in Nomad and nomad_tls_generate = no
 nomad_server_cert_file: ""

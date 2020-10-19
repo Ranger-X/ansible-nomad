@@ -8,7 +8,7 @@
   register: cfssl_bin
 
 - block:
-
+    # https://github.com/cloudflare/cfssl
   - name: Download CFSSL {{ cfssl_version }} binaries
     get_url:
       url: "{{ cfssl_pkg_url }}/{{ item }}_linux-amd64"
@@ -25,19 +25,19 @@
   become: false
 
 - block:
-    - name: Generate Nomad TLS CA
-      shell:
-        cmd: "cfssl print-defaults csr | cfssl gencert -initca - | cfssljson -bare {{ nomad_tls_ca_prefix }}"
-        chdir: "{{ nomad_config_dir }}/"
-        creates: "{{ nomad_config_dir }}/{{ nomad_tls_ca_prefix }}.pem"
-
-    - name: Copy cfssl.json
-      copy:
-        src: cfssl.json
+    - name: Create cfssl.json
+      template:
+        src: cfssl.json.j2
         dest: "{{ nomad_config_dir }}/cfssl.json.def"
         owner: "{{ nomad_user }}"
         group: "{{ nomad_group }}"
         mode: '0644'
+
+    - name: Generate Nomad TLS CA
+      shell:
+        cmd: "cfssl genkey -initca {{ nomad_config_dir }}/cfssl.json.def | cfssljson -bare {{ nomad_tls_ca_prefix }}"
+        chdir: "{{ nomad_config_dir }}/"
+        creates: "{{ nomad_config_dir }}/{{ nomad_tls_ca_prefix }}.pem"
 
     - name: Generate Nomad TLS for Server role
       shell:

@@ -1,0 +1,21 @@
+{
+    "CN": "{{ nomad_ca_cn }}",
+    "hosts": {{ nomad_ca_hosts | to_json }},
+    "key": {
+        "algo": "{{ nomad_ca_key_algo }}",
+        "size": {{ nomad_ca_key_size }}
+    },
+    "names": {{ nomad_ca_names | to_json }},
+
+    "signing": {
+      "default": {
+        "expiry": "{{ nomad_ca_signing_default_expiry }}",
+        "usages": [
+          "signing",
+          "key encipherment",
+          "server auth",
+          "client auth"
+        ]
+      }
+    }
+}
