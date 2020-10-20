@@ -168,11 +168,15 @@ nomad_ca_signing_default_expiry: "876000h"
 # Only need to define if you want HTTPS in Nomad and nomad_tls_generate = no
 nomad_server_cert_file: ""
 nomad_server_key_file: ""
+# additional hosts in Nomad's server certificate
+nomad_server_hosts: []
 
 # TLS certificate for client role
 # Only need to define if you want HTTPS in Nomad and nomad_tls_generate = no
 nomad_client_cert_file: ""
 nomad_client_key_file: ""
+# additional hosts in Nomad's client certificate
+nomad_client_hosts: []
 
 nomad_verify_server_hostname: true
 nomad_verify_https_client: true

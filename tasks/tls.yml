@@ -41,14 +41,14 @@
 
     - name: Generate Nomad TLS for Server role
       shell:
-        cmd: "echo '{}' | cfssl gencert -ca={{ nomad_tls_ca_prefix }}.pem -ca-key={{ nomad_tls_ca_prefix }}-key.pem -config=cfssl.json.def -hostname=\"server.{{ nomad_region }}.nomad,localhost,127.0.0.1,{{ nomad_advertise_address }}\" - | cfssljson -bare server"
+        cmd: "echo '{}' | cfssl gencert -ca={{ nomad_tls_ca_prefix }}.pem -ca-key={{ nomad_tls_ca_prefix }}-key.pem -config=cfssl.json.def -hostname=\"server.{{ nomad_region }}.nomad,localhost,127.0.0.1,{{ nomad_advertise_address }}{{ ',' + (nomad_server_hosts | join(',')) if nomad_server_hosts | length > 0 else '' }}\" - | cfssljson -bare server"
         chdir: "{{ nomad_config_dir }}/"
         creates: "{{ nomad_config_dir }}/server.pem"
       when: _nomad_node_server | bool
 
     - name: Generate Nomad TLS for Client role
       shell:
-        cmd: "echo '{}' | cfssl gencert -ca={{ nomad_tls_ca_prefix }}.pem -ca-key={{ nomad_tls_ca_prefix }}-key.pem -config=cfssl.json.def -hostname=\"client.{{ nomad_region }}.nomad,localhost,127.0.0.1,{{ nomad_advertise_address }}\" - | cfssljson -bare client"
+        cmd: "echo '{}' | cfssl gencert -ca={{ nomad_tls_ca_prefix }}.pem -ca-key={{ nomad_tls_ca_prefix }}-key.pem -config=cfssl.json.def -hostname=\"client.{{ nomad_region }}.nomad,localhost,127.0.0.1,{{ nomad_advertise_address }}{{ ',' + (nomad_client_hosts | join(',')) if nomad_client_hosts | length > 0 else '' }}\" - | cfssljson -bare client"
         chdir: "{{ nomad_config_dir }}/"
         creates: "{{ nomad_config_dir }}/client.pem"
       when: _nomad_node_client | bool
