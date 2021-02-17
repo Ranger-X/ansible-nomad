@@ -1,4 +1,4 @@
-- name: create volume {{ item['name'] }}
+- name: create volumes
   file:
     path: "{{ item['path'] }}"
     owner: "{{ item['owner'] | default(nomad_user) }}"
